@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ucapan Ulang Tahun</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet"><style>
+body {
+  margin:0;
+  height:100vh;
+  background:#090909;
+  font-family:'Poppins', sans-serif; /* diganti */
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  overflow:hidden;
+}
+canvas {
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  z-index:0; pointer-events:none;
+}
+.card {
+  position:relative; z-index:1;
+  background:#eec1c1; border-radius:20px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.2);
+  max-width:420px; width:90%; min-height:520px;
+  display:flex; flex-direction:column; overflow:hidden;
+  padding-bottom:60px;
+}
+.slide {
+  position:absolute; top:0; left:0; right:0; bottom:0;
+  display:flex; flex-direction:column;
+  opacity:0; pointer-events:none;
+}
+.slide.active {opacity:1; pointer-events:auto;}
+
+/* ✅ FIX FOTO SETENGAH */
+.content {
+  flex:1;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start; /* sebelumnya center */
+  align-items:center;
+  text-align:center;
+  overflow-y:auto;
+}
+
+h1 {
+  font-size:24px;
+  font-weight:600;
+  margin:10px 0;
+  color:#ff4d88;
+}
+
+p {
+  font-size:16px;
+  font-weight:400;
+  color:#090202;
+  line-height:1.6;
+}
+
+.pin-box {
+  display:flex; gap:10px; justify-content:center; margin:15px 0;
+}
+.pin-box input {
+  width:50px; height:60px; font-size:28px; text-align:center;
+  border-radius:10px; border:2px solid #ff4d88;
+}
+.error {color:#b88181; margin-top:10px;}
+.keyboard .row {display:flex; justify-content:center; margin:5px 0;}
+.keyboard button {
+  width:60px; height:60px; margin:5px; border:none; border-radius:10px;
+  font-size:20px; background:#ff4d88; color:#fff; cursor:pointer;
+  box-shadow:0 4px 10px rgba(0,0,0,0.2); transition:0.2s;
+}
+.keyboard button:active {transform:scale(0.9); background:#e60073;}
+img {
+  max-width:80%;
+  border-radius:16px;
+  box-shadow:0 4px 16px rgba(0,0,0,0.3);
+  margin:15px 0;
+}
+.btn {
+  padding:10px 20px; border:none; border-radius:10px;
+  background:#ff4d88; color:#fff; font-size:18px; cursor:pointer;
+  box-shadow:0 4px 10px rgba(0,0,0,0.2); transition:0.3s;
+}
+.btn:hover {background:#e60073;}
+.nav-btns {
+  display:flex; justify-content:space-between; gap:10px;
+  padding:12px 20px; border-top:1px solid #eee; background:#fff;
+}
+
+/* Animasi Slide */
+@keyframes slideInRight { from {transform:translateX(100%); opacity:0;} to {transform:translateX(0); opacity:1;} }
+@keyframes slideOutLeft { from {transform:translateX(0); opacity:1;} to {transform:translateX(-100%); opacity:0;} }
+@keyframes slideInLeft { from {transform:translateX(-100%); opacity:0;} to {transform:translateX(0); opacity:1;} }
+@keyframes slideOutRight { from {transform:translateX(0); opacity:1;} to {transform:translateX(100%); opacity:0;} }
+.slide-in-right {animation:slideInRight 0.6s forwards;}
+.slide-out-left {animation:slideOutLeft 0.6s forwards;}
+.slide-in-left {animation:slideInLeft 0.6s forwards;}
+.slide-out-right {animation:slideOutRight 0.6s forwards;}
+
+#musicToggle {
+  position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
+  padding:10px 20px; border:none; border-radius:10px;
+  background:#ff4d88; color:#edb0b0; font-size:16px; cursor:pointer;
+  box-shadow:0 4px 10px rgba(0,0,0,0.2); transition:0.3s; z-index:10;
+}
+#musicToggle:hover {background:#e60073;}
+</style>
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div class="card">
+  <!-- Slide 1 -->
+  <div class="slide active" id="slide1">
+    <div class="content">
+      <h1>Masukkan PIN </h1>
+      <div class="pin-box">
+        <input type="password" maxlength="1" onkeydown="return false;">
+        <input type="password" maxlength="1" onkeydown="return false;">
+        <input type="password" maxlength="1" onkeydown="return false;">
+        <input type="password" maxlength="1" onkeydown="return false;">
+      </div>
+      <div class="keyboard">
+        <div class="row">
+          <button onclick="pressNum(1)">1</button>
+          <button onclick="pressNum(2)">2</button>
+          <button onclick="pressNum(3)">3</button>
+        </div>
+        <div class="row">
+          <button onclick="pressNum(4)">4</button>
+          <button onclick="pressNum(5)">5</button>
+          <button onclick="pressNum(6)">6</button>
+        </div>
+        <div class="row">
+          <button onclick="pressNum(7)">7</button>
+          <button onclick="pressNum(8)">8</button>
+          <button onclick="pressNum(9)">9</button>
+        </div>
+        <div class="row">
+          <button onclick="deleteNum()">⌫</button>
+          <button onclick="pressNum(0)">0</button>
+          <button onclick="checkPin()">✔</button>
+        </div>
+      </div>
+      <div class="error" id="errorMsg"></div>
+      <p style="margin-top:12px; font-size:16px; color:#555;"><i>* Clue: tahun lahir kamu</i></p>
+    </div>
+  </div>
+
+  <!-- Slide 2 -->
+  <div class="slide" id="slide2">
+    <div class="content">
+      <h1>Selamat Ulang Tahun gantengkuu ❤️❤️❤️</h1>
+      <img src="foto19.jpeg" alt="Happy Birthday">
+      <p>Semoga hari ini penuh dengan tawa, cinta, dan kebahagiaan.
+        ayoo sebelum kamu lanjut kamu berdoa dulu
+      </p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+  <!-- Slide 3 -->
+  <div class="slide" id="slide3">
+    <div class="content">
+      <h1>Doa dan harapan</h1>
+      <img src="hope.gif" alt="Doa dan Harapan">
+      <p>selamat ulangtahun sayangkuu, gantengku, cintaku, selamat ulang tahun yaaa, aku sengaja bikin kaya gini, supaya kamu ulang tahun disana ga ngerasa sendiri hihi, selamat ulang tahun ya sayangku cintakuuu, akuu senengg bangettt cowo aku ulang tahun! sehat sehat selalu ya sayang, di ulang tahun yg ke 22 ini semoga kamu makin sehat ya, panjang umurnya, rezekinya mengalir selalu, doa doanya terkabulkan,pokoknya apa yg kamu terkabul ya sayang aamiinn! 
+AYO AMIININ YG KENCENGGGGG YAAAA.</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+  <!-- Slide 4 -->
+  <div class="slide" id="slide4">
+    <div class="content">
+      <!-- <h1>Kata-kata Romantis ❤️</h1> -->
+      <img src="foto1.jpg" alt="Foto Romantis">
+      
+      <p>Di ulang tahun kamu yg sekarang ini aku mau ucapin banyak banyak terimakasih, karenaa kamu uda bertahan sejauh ini se bertahan ini, aku gatau apa aja yg kamu uda laluin diluar sana tapi intinya jelas aku bangga sekaliii punya cowo kaya kamuu, aku bersyukur sekaliii, terimakasih ya sayangg uda jadi laki laki yg luat, yg selalu mengusahakan semuanya sendirian, dan selalu berusaha baik baik aja, terimakasih banyakk yaaaa, aku gatau apa aja yg uda banyak kamu lewatin sampai saat inii, tapii liatt kamu kerenn bisa ngelewatin semuanyaa , AKU BANGGA BANGETT SAMA KAMU YEAY,sayangg aku gatau seberat apa pundak kamu seberisik apa pikiran kamu, tapi yg jelas aku disini selalu berdoa buat kamuuu, aku gakan ada bosennya bilang kalo AKU BANGGA BANGET SAMA KAMU, kenapa? karena cowo aku kerenn bangettt, kuat bangetttt, pokoknya luar biasa deh ✨
+sayangg selelah apapun kamu, kamu jangan ngerasa sendiri yaa? ada aku disini buat kamuu, apapun itu aku bisa jadi apa aja yg kamu mauuu💓, karena aku ga bakalan biarin cowo aku kenapa kenapa sendirian, pokoknya tenang sayang kita lewatin semuanya bareng bareng walaupun kita gatau badainya seberat apaa nanti tapi yg jelas apapun itu kita lewatin sama sama yaaaa!</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+  <!-- Slide 5 -->
+  <div class="slide" id="slide5">
+    <div class="content">
+      <!-- <h1>Kata-kata Romantis ❤️</h1> -->
+      <img src="foto2.jpg" alt="Foto Romantis">
+      <p>dan 
+aku harap di ulangtahun kamu yang sekarang bisa jadi jauh lebih baik lagi kedepannya, makin sabar yaa sayang ngehadepin aku, makin sehat selalu, pokoknya sayang jaga kesehatan jangan sering bergadang, minum minuman manis,makanan pedes, dll
+banyakin istirahat ya sayangg, semoga kamu makin kuat kedepannya, makin siap dan semangat buat kedepannya, semoga doa doa kamu terkabulkan mimpi mimpi kamu terkabulkan, semoga dihidup kamu di jauhkan dari kesulitan, dijauhkan dari marabahaya, dan semoga makin sayang sama akuu hehe, sehat sehat yaa sayang sukses selaluu, ayok kejar mimpi kamu mimpi kita, aku bakal selalu nemenin proses kamuu tenang ajaaa, intinya semoga di umur kamu yg 22 ini kamu bisa jauh lebih baik lagi dan bisa meningkatkan apa yg ingin kamu tingkatan.</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+  <!-- Slide 6 -->
+  <div class="slide" id="slide6">
+    <div class="content">
+      <!-- <h1>Kata-kata Romantis ❤️</h1> -->
+      <img src="foto3.jpg" alt="Foto Romantis">
+      <p>Tentunya aku berdoa semoga kamu selalu diberikan kekuatan kesebaran kelancancaran kedepannya dan di jauhkan dari kesulitan,untuk kedepannya semogaa makin kuat ngejalanin skripsi an nya sidangnya dan tugas lainnya, jangan nyerah ya sayangg, inget kamu uda bertahan sejauh  ini yaa, dan intinya semoga doa doa kamu doa doa aku terkabul yaa sayangg aamiinn🤲🏻💓.</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+  <!-- Slide 7 -->
+  <div class="slide" id="slide6">
+    <div class="content">
+      <!-- <h1>Kata-kata Romantis ❤️</h1> -->
+      <img src="foto4.jpg" alt="Foto Romantis">
+      <p>POKONYA AKU SELALU SAYANGGGG SAMA KAMUUUUU SAYANG BANGETT DAN AKU DISNI TULUS BANGET SAMA KAMUUUU ,CEPET PULANG YA SAYANGG AKU KANGENNNNNN</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+  <!-- Slide 8 -->
+  <div class="slide" id="slide6">
+    <div class="content">
+      <!-- <h1>Kata-kata Romantis ❤️</h1> -->
+      <img src="foto5.jpg" alt="Foto Romantis">
+      <p>SEHAT SEHAT YAA SAYANGKUU BIAR KITA BISA KEMANA AJA KETEMPAT YANG KITA MAUU</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+  <!-- Slide 9-->
+  <div class="slide" id="slide6">
+    <div class="content">
+      <!-- <h1>Kata-kata Romantis ❤️</h1> -->
+      <img src="foto6.jpg" alt="Foto Romantis">
+      <p>AKU SELALU KANGEN SAMA KAMU APALAGI KETEMPAT YANG PERNAH KITA MAIN KESANAA!!</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+  <!-- Slide 8 -->
+  <div class="slide" id="slide6">
+    <div class="content">
+      <!-- <h1>Kata-kata Romantis ❤️</h1> -->
+      <img src="foto7.jpg" alt="Foto Romantis">
+      <p>AKU JUGAA SAYANG BANGET SAMA BUTEEE❤️!</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+  <!-- Slide 8 -->
+  <div class="slide" id="slide6">
+    <div class="content">
+      <!-- <h1>Kata-kata Romantis ❤️</h1> -->
+      <img src="foto8.jpg" alt="Foto Romantis">
+      <p>AKU SELALU BERSYUKUR PUNYA KAMUU!</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+  <!-- Slide 8 -->
+  <div class="slide" id="slide6">
+    <div class="content">
+      <!-- <h1>Kata-kata Romantis ❤️</h1> -->
+      <img src="foto9.jpg" alt="Foto Romantis">
+      <p>MAKASI YA SAYANG UDA MAU SAMA SAMA BERJUANG DAN JADI TEMPAT CERITA POKONYA TEMPAT SEMUANYAA ❤️</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+  <!-- Slide 8 -->
+  <div class="slide" id="slide6">
+    <div class="content">
+      <!-- <h1>Kata-kata Romantis ❤️</h1> -->
+      <img src="foto10.jpg" alt="Foto Romantis">
+      <p>TERIMAKASIH UDA JADI LAKI LAKI YANG BAIK YAAAA❤️</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+  <!-- Slide 8 -->
+  <div class="slide" id="slide6">
+    <div class="content">
+      <!-- <h1>Kata-kata Romantis ❤️</h1> -->
+      <img src="foto11.jpeg" alt="Foto Romantis">
+      <p>UDA JADI TEMEN YANG BAIKK❤️</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+   <!-- Slide 8 -->
+  <div class="slide" id="slide6">
+    <div class="content">
+      <!-- <h1>Kata-kata Romantis ❤️</h1> -->
+      <img src="foto12.jpeg" alt="Foto Romantis">
+      <p>JADI SAHABAT YANG BAIKK❤️</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+   <!-- Slide 8 -->
+  <div class="slide" id="slide6">
+    <div class="content">
+      <!-- <h1>Kata-kata Romantis ❤️</h1> -->
+      <img src="foto14.jpeg" alt="Foto Romantis">
+      <p>DAN..TERIMAKASIH UDA JADI PASANGAN YANG SEMPURNA❤️</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+   <!-- Slide 8 -->
+  <div class="slide" id="slide6">
+    <div class="content">
+      <!-- <h1>Kata-kata Romantis ❤️</h1> -->
+      <img src="foto15.jpeg" alt="Foto Romantis">
+      <p>JANJI SAMA AKU YA HARUS JADI ORANG YG AKU KENAL SELALU JANGAN PERNAH BERUBAH YA SAMPAI KAPAN PUN!!!</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+   <!-- Slide 8 -->
+  <div class="slide" id="slide6">
+    <div class="content">
+      <!-- <h1>Kata-kata Romantis ❤️</h1> -->
+      <img src="foto13.jpeg" alt="Foto Romantis">
+      <p>walaupun aku ga bisa menebak kedepannya kaya gimana tapi intinya aku selalu seneng bahagia sama kamuuu</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+   <!-- Slide 8 -->
+  <div class="slide" id="slide6">
+    <div class="content">
+      <!-- <h1>Kata-kata Romantis ❤️</h1> -->
+      <img src="foto16.jpeg" alt="Foto Romantis">
+      <p>❤️</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+  <!-- Slide 8 -->
+  <div class="slide" id="slide6">
+    <div class="content">
+      <!-- <h1>Kata-kata Romantis ❤️</h1> -->
+      <img src="foto17.jpeg" alt="Foto Romantis">
+      <p>semoga ini bisa nemenin ulang tahun kamu disana ya aku bikin ini karena supaya kamu ga ngerasa sendirian❤️</p>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+      <button class="btn" onclick="nextSlide()">Lanjut ➡</button>
+    </div>
+  </div>
+
+  <!-- Slide 7-->
+  <div class="slide" id="slide7">
+    <div class="content">
+      <!-- <h1>Terima Kasih 🙏</h1> -->
+      <img src="foto18.jpeg" alt="Terima Kasih">
+      <p>Terima kasih -niswahk.n.a</p>
+    </div>
+    <div class="nav-btns" style="justify-content:center;">
+      <button class="btn" onclick="prevSlide()">⬅ Kembali</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tombol musik toggle -->
+<button id="musicToggle" onclick="toggleMusic()">▶ Play Musik</button>
+
+<script>
+let currentSlide=1;
+const slides=document.querySelectorAll('.slide');
+
+function animateSlides(oldIndex,newIndex){
+  const oldSlide=slides[oldIndex-1];
+  const newSlide=slides[newIndex-1];
+
+  slides.forEach(s=>
+    s.classList.remove("slide-in-right","slide-out-left","slide-in-left","slide-out-right","active")
+  );
+
+  if(newIndex>oldIndex){ 
+    oldSlide.classList.add("slide-out-left");
+    newSlide.classList.add("slide-in-right");
+  } else {
+    oldSlide.classList.add("slide-out-right");
+    newSlide.classList.add("slide-in-left");
+  }
+
+  newSlide.classList.add("active");
+  currentSlide=newIndex;
+}
+
+function nextSlide(){
+  if(currentSlide < slides.length){
+    animateSlides(currentSlide,currentSlide+1);
+  }
+}
+
+function prevSlide(){
+  if(currentSlide > 1){
+    animateSlides(currentSlide,currentSlide-1);
+  }
+}
+
+function checkPin(){
+  const inputs=document.querySelectorAll('#slide1 input');
+  const pin=[...inputs].map(i=>i.value).join('');
+
+  if(pin==="2004"){
+    animateSlides(1,2);
+    document.getElementById('errorMsg').innerText="";
+  } else {
+    document.getElementById('errorMsg').innerText="PIN salah, coba lagi!";
+    inputs.forEach(i=>i.value="");
+  }
+}
+
+function pressNum(num){
+  const inputs=document.querySelectorAll('#slide1 input');
+  for(let i=0;i<inputs.length;i++){
+    if(inputs[i].value===""){
+      inputs[i].value=num;
+      break;
+    }
+  }
+}
+
+function deleteNum(){
+  const inputs=document.querySelectorAll('#slide1 input');
+  for(let i=inputs.length-1;i>=0;i--){
+    if(inputs[i].value!==""){
+      inputs[i].value="";
+      break;
+    }
+  }
+}
+
+/* Musik */
+let audio=new Audio("musik.mp3");
+audio.loop=true;
+let isPlaying=false;
+
+function toggleMusic(){
+  if(isPlaying){
+    audio.pause();
+    isPlaying=false;
+    document.getElementById('musicToggle').innerText="▶ Play Musik";
+  } else {
+    audio.play();
+    isPlaying=true;
+    document.getElementById('musicToggle').innerText="⏸ Stop Musik";
+  }
+}
+
+/* Love animation */
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+class Heart{
+  constructor(){
+    this.x=Math.random()*canvas.width;
+    this.y=canvas.height+Math.random()*100;
+    this.size=10+Math.random()*20;
+    this.speed=0.5+Math.random()*1.5;
+    this.alpha=0.4+Math.random()*0.6;
+
+    // ✅ warna hitam atau putih random
+    const colors=[
+      `rgba(0,0,0,${this.alpha})`,      // hitam
+      `rgba(255,255,255,${this.alpha})` // putih
+    ];
+
+    this.color=colors[Math.floor(Math.random()*colors.length)];
+  }
+
+  draw(){
+    ctx.save();
+    ctx.translate(this.x,this.y);
+    ctx.fillStyle=this.color;
+    ctx.beginPath();
+    ctx.moveTo(0,-this.size/2);
+    ctx.bezierCurveTo(this.size/2,-this.size,this.size,-this.size/4,0,this.size);
+    ctx.bezierCurveTo(-this.size,-this.size/4,-this.size/2,-this.size,0,-this.size/2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  update(){
+    this.y-=this.speed;
+    if(this.y<-50){
+      this.y=canvas.height+50;
+      this.x=Math.random()*canvas.width;
+    }
+    this.draw();
+  }
+}
+
+let hearts=[];
+for(let i=0;i<40;i++){
+  hearts.push(new Heart());
+}
+
+function animate(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  hearts.forEach(h=>h.update());
+  requestAnimationFrame(animate);
+}
+
+animate();
+
+window.addEventListener("resize",()=>{
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+});
+</script>
